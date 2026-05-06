@@ -11,8 +11,14 @@ app = Flask(__name__)
 CORS(app)
 app.secret_key = secrets.token_hex(16)
 
-UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'images')
-OUTPUT_FOLDER = os.path.join(os.path.dirname(__file__), 'output')
+IS_VERCEL = "VERCEL" in os.environ
+
+if IS_VERCEL:
+    UPLOAD_FOLDER = '/tmp/images'
+    OUTPUT_FOLDER = '/tmp/output'
+else:
+    UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'images')
+    OUTPUT_FOLDER = os.path.join(os.path.dirname(__file__), 'output')
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['OUTPUT_FOLDER'] = OUTPUT_FOLDER
