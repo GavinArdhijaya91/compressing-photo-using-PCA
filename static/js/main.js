@@ -201,14 +201,15 @@ function renderResults(data) {
   renderAnalysis(data);
 
   const ts = '?t=' + Date.now();
-  imgOriginal.src   = data.original_url + ts;
-  imgCompressed.src = data.compressed_url + ts;
+  const appendTs = (url) => url.startsWith('data:') ? url : url + ts;
+  imgOriginal.src   = appendTs(data.original_url);
+  imgCompressed.src = appendTs(data.compressed_url);
   setDivider(50);
 
   plotSection.style.display = data.plot_url ? 'block' : 'none';
-  if (data.plot_url) plotImg.src = data.plot_url + ts;
+  if (data.plot_url) plotImg.src = appendTs(data.plot_url);
 
-  btnDownload.href     = `/download/${data.compressed_filename}`;
+  btnDownload.href     = data.compressed_url.startsWith('data:') ? data.compressed_url : `/download/${data.compressed_filename}`;
   btnDownload.download = `pca_k${data.num_components_used}_${selectedFile.name.replace(/\.[^.]+$/, '')}.png`;
 
   resultsSection.classList.add('visible');
