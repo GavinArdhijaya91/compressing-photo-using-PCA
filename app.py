@@ -75,10 +75,28 @@ def api_compress():
 
     plot_result = generate_comparison_plot(upload_path, compressed_path, plot_path, stats=stats)
 
+    import base64
+    
+    def get_b64(path):
+        if not os.path.exists(path): return None
+        with open(path, 'rb') as f:
+            return f"data:image/png;base64,{base64.b64encode(f.read()).decode('utf-8')}"
+
+    orig_b64 = get_b64(upload_path)
+    comp_b64 = get_b64(compressed_path)
+    plot_b64 = get_b64(plot_path) if plot_result else None
+
+    if IS_VERCEL:
+        try:
+            os.remove(upload_path)
+            os.remove(compressed_path)
+            if plot_result: os.remove(plot_path)
+        except: pass
+
     return jsonify({
-        'original_url':       f'/images/{safe_name}',
-        'compressed_url':     f'/output/{compressed_name}',
-        'plot_url':           f'/output/{plot_name}' if plot_result else None,
+        'original_url':       orig_b64 or f'/images/{safe_name}',
+        'compressed_url':     comp_b64 or f'/output/{compressed_name}',
+        'plot_url':           plot_b64 or (f'/output/{plot_name}' if plot_result else None),
         'compressed_filename': compressed_name,
         'original_size_bytes':   stats['original_size'],
         'compressed_size_bytes': stats['compressed_size'],
