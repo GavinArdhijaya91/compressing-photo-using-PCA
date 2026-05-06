@@ -25,14 +25,14 @@ def compress_image(image_path, num_components=50, output_path='output/compressed
             for c in range(image_f.shape[2]):
                 channel = image_f[:, :, c]
                 k = max(1, min(num_components, channel.shape[0], channel.shape[1]))
-                pca = PCA(n_components=k)
+                pca = PCA(n_components=k, svd_solver='randomized')
                 reconstructed = pca.inverse_transform(pca.fit_transform(channel))
                 reconstructed_channels.append(np.clip(reconstructed, 0.0, 1.0))
                 explained_var_ratios.append(np.sum(pca.explained_variance_ratio_))
             reconstructed_image = np.stack(reconstructed_channels, axis=2)
         else:
             k = max(1, min(num_components, image_f.shape[0], image_f.shape[1]))
-            pca = PCA(n_components=k)
+            pca = PCA(n_components=k, svd_solver='randomized')
             reconstructed_image = np.clip(pca.inverse_transform(pca.fit_transform(image_f)), 0.0, 1.0)
             explained_var_ratios.append(np.sum(pca.explained_variance_ratio_))
 
