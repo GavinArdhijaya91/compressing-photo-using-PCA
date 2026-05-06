@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Compress images using PCA. Upload a photo, set the number of components k, and get the compressed result with live stats." />
+  <title>PCA Image Compressor</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+
+<div class="wrapper">
+
+  <header class="site-header">
+    <div class="logo">
+      <div class="logo-dot"></div>
+      PCA Compressor
+    </div>
+    <span class="header-tag">sklearn.decomposition.PCA</span>
+  </header>
+
+  <section class="hero">
+    <p class="hero-eyebrow">Principal Component Analysis</p>
+    <h1>Image<br>Compression<br>Demo</h1>
+    <p>Upload any photo. Set the number of components. See how PCA reduces file size while retaining image information.</p>
+  </section>
+
+  <div class="panel" id="upload-card">
+
+    <div class="upload-zone" id="upload-zone" role="button" tabindex="0" aria-label="Upload image">
+      <div class="upload-icon">↑</div>
+      <h3>Drop image here</h3>
+      <p>or click to browse</p>
+      <p class="formats">PNG · JPG · JPEG · WEBP · BMP · GIF &nbsp;·&nbsp; Max 50 MB</p>
+      <input type="file" id="file-input" accept=".png,.jpg,.jpeg,.gif,.bmp,.webp" />
+    </div>
+
+    <div class="preview-strip" id="preview-strip">
+      <img class="preview-thumb" id="preview-thumb" src="" alt="preview" />
+      <div class="preview-info">
+        <div class="name" id="preview-name">—</div>
+        <div class="size" id="preview-size">—</div>
+      </div>
+      <button class="remove-btn" id="remove-btn" aria-label="Remove file">✕</button>
+    </div>
+
+    <div class="section-divider"></div>
+
+    <!-- Slider -->
+    <div class="slider-header">
+      <span class="slider-label">Components &nbsp;(k)</span>
+      <div class="k-display">
+        <span id="k-value">50</span>
+        <span class="k-unit">components</span>
+      </div>
+    </div>
+
+    <input type="range" id="k-slider" min="1" max="500" value="50" step="1" aria-label="Number of PCA components" />
+    <div class="slider-track-labels">
+      <span>1 — Max compression</span>
+      <span>250 — Balanced</span>
+      <span>500 — Near lossless</span>
+    </div>
+
+    <div class="quality-hint" id="quality-hint">
+      k = 50 — Good compression with moderate quality loss.
+    </div>
+
+    <button class="btn-compress" id="btn-compress" disabled>
+      Run Compression
+    </button>
+
+    <div class="progress-wrap" id="progress-wrap">
+      <div class="progress-label">
+        <span id="progress-text">Processing…</span>
+        <span id="progress-pct">0%</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progress-fill"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="stats-grid" id="stats-grid" style="margin-top: 2px;">
+    <div class="stat-card">
+      <div class="stat-label">Original Size</div>
+      <div class="stat-value" id="stat-original">—</div>
+      <div class="stat-sub" id="stat-original-sub">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Compressed Size</div>
+      <div class="stat-value" id="stat-compressed">—</div>
+      <div class="stat-sub" id="stat-compressed-sub">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Size Reduction</div>
+      <div class="stat-value success" id="stat-ratio">—</div>
+      <div class="stat-sub">smaller than original</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Variance Retained</div>
+      <div class="stat-value accent" id="stat-variance">—</div>
+      <div class="stat-sub">info preserved by PCA</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Components Used</div>
+      <div class="stat-value" id="stat-k">—</div>
+      <div class="stat-sub" id="stat-dims">—</div>
+    </div>
+  </div>
+
+  <div class="analysis-panel" id="analysis-panel">
+    <div class="section-label">Compression Analysis</div>
+    <table class="analysis-table">
+      <tbody>
+        <tr>
+          <td class="at-key">Original file size</td>
+          <td class="at-val" id="an-orig-bytes">—</td>
+          <td class="at-val" id="an-orig-kb">—</td>
+          <td class="at-val" id="an-orig-mb">—</td>
+        </tr>
+        <tr>
+          <td class="at-key">Compressed file size</td>
+          <td class="at-val" id="an-comp-bytes">—</td>
+          <td class="at-val" id="an-comp-kb">—</td>
+          <td class="at-val" id="an-comp-mb">—</td>
+        </tr>
+        <tr class="at-highlight">
+          <td class="at-key">Space saved</td>
+          <td class="at-val" id="an-saved-bytes">—</td>
+          <td class="at-val" id="an-saved-kb">—</td>
+          <td class="at-val" id="an-saved-mb">—</td>
+        </tr>
+        <tr>
+          <td class="at-key">Compression ratio</td>
+          <td class="at-val" colspan="3" id="an-ratio">—</td>
+        </tr>
+        <tr>
+          <td class="at-key">Variance retained (avg per channel)</td>
+          <td class="at-val" colspan="3" id="an-variance">—</td>
+        </tr>
+        <tr>
+          <td class="at-key">Image dimensions</td>
+          <td class="at-val" colspan="3" id="an-dims">—</td>
+        </tr>
+        <tr>
+          <td class="at-key">Components used (k)</td>
+          <td class="at-val" colspan="3" id="an-k">—</td>
+        </tr>
+        <tr>
+          <td class="at-key">Max possible components</td>
+          <td class="at-val" colspan="3" id="an-k-max">—</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <section class="results-section" id="results-section">
+
+    <div class="section-label">Before / After — drag the divider</div>
+
+    <div class="comparison-wrapper" id="comparison-wrapper">
+      <div class="img-before">
+        <img id="img-original" src="" alt="Original image" />
+      </div>
+      <div class="img-after" id="img-after">
+        <img id="img-compressed" src="" alt="Compressed image" />
+      </div>
+      <div class="divider-line" id="divider-line"></div>
+      <div class="divider-handle" id="divider-handle">⇔</div>
+    </div>
+
+    <div class="comparison-labels">
+      <span>Original</span>
+      <span>Compressed (PCA)</span>
+    </div>
+
+    <div class="plot-section" id="plot-section" style="display:none">
+      <div class="section-label" style="margin-top:24px">Analysis Plot</div>
+      <img class="plot-img" id="plot-img" src="" alt="Compression analysis plot" />
+    </div>
+
+    <a class="btn-download" id="btn-download" href="#" download>
+      ↓ &nbsp; Download Compressed Image
+    </a>
+
+  </section>
+
+  <footer class="site-footer">
+    <span>PCA Image Compressor Demo</span>
+    <a href="https://scikit-learn.org/stable/modules/generated/sklearn.decomposition.PCA.html" target="_blank" rel="noopener">sklearn.decomposition.PCA</a>
+  </footer>
+
+</div>
+
+<div class="toast" id="error-toast" role="alert"></div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
